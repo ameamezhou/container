@@ -202,6 +202,8 @@ cgroups为每种资源定义了一个子系统，典型的子系统如下：
     
 2. namespace -> cgroup 只是进行了一些资源隔离，但是还有很多问题，比如pid、username、env 这些内容无法处理所以就用了namespace这么一个子系统
 
+https://zhuanlan.zhihu.com/p/433327341
+
 主要分离的内容有
 
 - user namespace 拥有自己的一组用户 ID 和组 ID，用于分配给进程。这意味着进程可以在其 user namespace 中拥有 root 权限，而不需要在其他 user namespace 中获得。
