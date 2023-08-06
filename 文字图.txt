@@ -1,0 +1,21 @@
+文字图1：
+[app] [app] [app] [app]
+[ Guest OS] [ Guest OS]
+[       Hypervisor    ]
+[       Host OS       ]
+[       Hardware      ]
+
+
+文字图2：
+[app] [app] [app] [app]
+[ Modified  [ Modified
+  Guest OS]   Guest OS]
+[       Hypervisor    ]
+[       Host OS       ]
+[       Hardware      ]
+
+文字图3：
+[   app   ] [   app   ]
+[Bins/libs] [Bins/libs]
+[       Host OS       ]
+[       Hardware      ]
