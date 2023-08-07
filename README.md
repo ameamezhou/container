@@ -227,7 +227,9 @@ unionfs 可以实现多个container共享一个镜像
 
 用时分配 allocate on demand
 
-##### 2.6 docker化服务常见问题
+https://www.jianshu.com/p/3ba255463047
+
+##### 3 docker化服务常见问题
 
 1. **服务性能有差异**
 
@@ -281,3 +283,368 @@ unionfs 可以实现多个container共享一个镜像
         
         1. 网络IO未进行隔离或限制
         2. 磁盘directIO有隔离和限制但是bufferIO没有
+
+- 常见情况
+    
+      1. 某个节点流量没变，CPU负载飙升
+      - 容器CPU 负载大幅度提升
+      - 接口耗时增加
+      - 服务没有变更，性能却受到了影响
+      可以使用一些性能分析工具来检查服务性能
+      比如 c++ -> perf
+
+      2. 服务可靠性问题
+      - 首先检查程序是否panic或者coredump
+      - 使用dmesg命令查看是否有oom情况
+      
+===================================
+
+dmesg 补充
+
+在 Linux 系统中，dmesg 命令用于显示内核环境变量。如果系统出现了 OOM（Out Of Memory）情况，可以通过 dmesg 命令来查看系统日志，以确定是否是由于内存不足导致的。
+
+具体来说，我们可以使用以下命令来查看 dmesg 日志中是否出现 OOM 相关的信息：
+
+```shell
+dmesg | grep -i oom
+```
+
+该命令会输出 dmesg 日志中包含 OOM 相关信息的行，其中 `-i` 参数表示不区分大小写。
+
+如果输出结果中包含类似于以下信息：
+
+```
+[  123.456789] Out of memory: Kill process 1234 (some_process) score 5678 or sacrifice child
+```
+
+那么就说明系统曾经出现过 OOM 情况，同时也显示了导致 OOM 的进程 ID（1234）、进程名称（some_process）以及进程的分数（5678）。这些信息可以帮助我们定位和解决系统内存不足的问题。
+
+需要注意的是，dmesg 日志中只会记录最近发生的事件，因此如果 OOM 事件发生的时间比较久远，可能无法通过 dmesg 命令来查看到相关信息。此时，可以查看系统的其他日志文件，如 /var/log/messages 或 /var/log/syslog，以获取更完整的系统日志。
+
+===================================
+
+```shell
+docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+```
+OPTIONS说明：
+
+-a stdin: 指定标准输入输出内容类型，可选 STDIN/STDOUT/STDERR 三项；
+
+-d: 后台运行容器，并返回容器ID；
+
+-i: 以交互模式运行容器，通常与 -t 同时使用；
+
+-P: 随机端口映射，容器内部端口随机映射到主机的端口
+
+-p: 指定端口映射，格式为：主机(宿主)端口:容器端口
+
+-t: 为容器重新分配一个伪输入终端，通常与 -i 同时使用；
+
+--name="nginx-lb": 为容器指定一个名称；
+
+--dns 8.8.8.8: 指定容器使用的DNS服务器，默认和宿主一致；
+
+--dns-search example.com: 指定容器DNS搜索域名，默认和宿主一致；
+
+-h "mars": 指定容器的hostname；
+
+-e username="ritchie": 设置环境变量；
+
+--env-file=[]: 从指定文件读入环境变量；
+
+--cpuset="0-2" or --cpuset="0,1,2": 绑定容器到指定CPU运行；
+
+-m :设置容器使用内存最大值；
+
+--net="bridge": 指定容器的网络连接类型，支持 bridge/host/none/container: 四种类型；
+
+--link=[]: 添加链接到另一个容器；
+
+--expose=[]: 开放一个端口或一组端口；
+
+--volume , -v: 绑定一个卷
+
+实例
+
+使用docker镜像nginx:latest以后台模式启动一个容器,并将容器命名为mynginx。
+docker run --name mynginx -d nginx:latest
+
+使用镜像nginx:latest以后台模式启动一个容器,并将容器的80端口映射到主机随机端口。
+docker run -P -d nginx:latest
+
+使用镜像 nginx:latest，以后台模式启动一个容器,将容器的 80 端口映射到主机的 80 端口,主机的目录 /data 映射到容器的 /data。
+docker run -p 80:80 -v /data:/data -d nginx:latest
+
+绑定容器的 8080 端口，并将其映射到本地主机 127.0.0.1 的 80 端口上。
+$ docker run -p 127.0.0.1:80:8080/tcp ubuntu bash
+
+使用镜像nginx:latest以交互模式启动一个容器,在容器内执行/bin/bash命令。
+runoob@runoob:~$ docker run -it nginx:latest /bin/bash
+
+**docker 文档**
+
+https://www.runoob.com/docker/docker-run-command.html
+
+**docker 源码入门**
+
+https://www.jianshu.com/p/4a1f712185c4
+
+https://github.com/docker/docker-ce/tree/master/components/cli/man
+
+===================================
+
+##### 4.1 容器的编排部署 k8s
+https://kubernetes.io/zh-cn/docs/home/
+
+目的是为了怎样更合理的去使用容器
+
+容器编排系统
+
+| 特性 | 说明 |
+| :------: |  :------: |
+| Provisioning   | 提供/管理/调度容器   | 
+| Configuration Scripting  | 通过配置定义容器服务   | 
+| Monitoring  | 跟踪/监控容器的健康   | 
+| Rolling upgrades and rollback  | 滚动升级和回滚   | 
+| Service Discovery  | 服务发现   | 
+| Container policy management   | 容器部署规则   | 
+| Interoperability   | 和其他系统的协同能力   | 
+
+##### 4.2 编排工具对比
+  kubernetes mesos docker-swarm openshift 自研平台 -> kubernetes 一统江湖
+  
+**k8s的优点**
+- 编排强可扩展性  方便企业根据自身情况定制扩展 k8s 编排的能力
+- 部署环境强扩展性，可部署Node于虚拟机、物理机等
+- 丰富工具集，k8s相关github项目超过1.2w个
+- 由谷歌开源并持续维护，保证了项目的可持续性与bug修复
+
+一个例子
+
+运营中的常见故障
+- 服务器故障 容器无法使用      -> 节点数保持  对应传统的服务器宕机  服务器迁移
+- 服务流量持续上涨，不扩容就血崩 -> 水平扩容  扩容降载
+- 服务版本升级                -> 服务发布  灰度控制  自动化滚动升级
+
+##### 4.3 k8s中的基本管理单位 pod
+k8s中使用pod来管理容器，每个pod可以包含一个或者多个紧密关联的容器
+
+pod内容器共享PID IPC Network 和 UTS namespace
+
+如何被定义一个pod
+
+首先要写一个yaml文件 (yaml 文件详解: https://developer.aliyun,com/article/928015)
+
+```yaml
+# nginx_test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+      resource:
+        limits:
+          cpu: 100m
+          memory: 300Mi
+      ports:
+        - containerPort: 80
+```
+创建Pod kubectl create -f nginx_test.yaml
+
+查询Pod kubectl get pod
+
+检查pod kubectl describe pod nginx
+
+    节点数保持
+    yaml 文件中由一个配置项 ReplicaSet [RS] 确保容器应用的副本数始终保持在用户定义的副本数
+
+    RS 升级版 - Deployment
+    定义 Deployment 来创建Pod 和 ReplicaSet
+    滚动升级和回滚应用
+    扩容和缩容
+    暂停和继续部署
+
+##### 4.4 插入k8s概念 选择pod label
+
+label 是识别kubernetes对象的标签，以key/value的形式附加在对象上
+
+Annotations 用来记录一些附加信息 用来辅助应用部署、安全策略以及调度策略等
+
+##### 4.3 关于 Deployment
+```yaml
+# Deployment.yaml
+apiVersion: extensions/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels: 
+    app: nginx
+spec:
+  replicas: 3
+  selector: 
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+  spec:
+    containers:
+      - name: nginx
+        image: nginx:latest
+        resource:
+          limits:
+            cpu: "1"
+            memory: 300Mi
+      ports:
+        - containerPort: 80
+```
+创建服务: kubectl apply -f nginx.yaml
+
+删除服务: kubectl delete -f nginx.yaml
+
+扩容: kubectl scale deployment nginx--replicas 10
+
+升级: kubectl set image deployment/nginx nginx=nginx:1.9.4
+
+回滚: kubectl rollout undo deployment/nginx
+
+其中可以用 kubctl get deployment 可以看到所有deployment集群
+
+kubectl get pods 可以看到所有的pod 然后看到 deployment 集群的pods会自动带上一些字符串后缀进行区分
+
+##### 4.5 自动扩容HPA 自动扩缩容Pod
+```yaml
+# nginx_hpa.yaml
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx-hpa
+spec:
+  scaleTargetRef:
+    apiVsersion: apps/v1
+    kind: Deployment
+    name: nginx
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: CPU
+        target:
+          type: Utilization
+          averageUtilization: 5
+```
+创建HPA: kubectl create -f nginx_hpa.yaml
+
+删除HPA:kubectl delete -f nginx_hpa.yaml
+
+查看HPA: kubectl get hpa
+
+```shell
+# kubectl 命令补充
+kubectl get pod
+kubectl cp target_file pod_name:/DIR/DIR # kubectl cp full nginx:/usr/local
+kubectl exec -ti pod_name bash # 登录pod执行命令
+```
+##### 4.6 k8s的服务发现
+
+Kubernetes服务发现是通过`kube-proxy`和`Service`对象来实现的。
+
+`kube-proxy`是Kubernetes集群中的一个组件，主要负责实现服务发现和负载均衡。它会监视Kubernetes API服务器中的`Service`和`Endpoints`资源对象，然后生成对应的iptables规则，将流量转发到正确的Pod中，从而实现服务发现和负载均衡。
+
+`Service`对象是Kubernetes中定义服务的一种资源对象，它可以让多个Pod共享同一个虚拟IP和端口，从而组成一个逻辑上的服务。当Pod启动或停止时，`Service`对象会自动更新其后端的`Endpoints`对象，从而维护服务的可用性和准确性。
+
+当客户端访问一个服务时，请求会先到达`kube-proxy`所在的节点，`kube-proxy`会根据服务的类型（ClusterIP、NodePort、LoadBalancer或ExternalName）和端口号等信息，将请求转发到正确的Pod中。如果服务有多个后端Pod，`kube-proxy`会根据负载均衡算法（如轮询、随机等）来选择其中一个Pod来处理请求。
+
+总之，Kubernetes服务发现是通过`kube-proxy`和`Service`对象来实现的，它可以让集群中的各个组件和应用程序可以方便地相互发现和通信，从而构建高可用、可伸缩的分布式应用系统。
+
+这些是k8s自带的服务发现的机制，但是在很多地方我们的服务发现都是自研的一些工具
+这些服务发现都是需要我们在宿主机上安装一个agent  这个时候就要用到 k8s 的DemonSet机制
+K8s 确保一个node运行一个pod的副本 主要用于部署agent 多见于服务发现和日志采集等agent
+
+三个基本问题解决 -- 运营中的常见故障
+- 服务器故障，容器无法使用          --> 节点数保持 对应传统的 宕机 服务器迁移 -> ReplicaSet Deployment 服务发现
+- 服务流量持续上涨，不扩容就血崩     --> 水平扩容  扩容降载                 -> k8s HPA
+- 服务版本升级                    --> 服务发布  灰度控制，自动化滚动升级    -> Deployment
+
+##### 5.1 k8s的核心原理
+
+k8s的系统架构
+
+https://www.kubernetes.org.cn/kubernetes%E8%AE%BE%E8%AE%A1%E6%9E%B6%E6%9E%84
+
+k8s的架构设计
+
+k8s的系统构建 - API server
+> 提供集群管理的 REST API 接口，包括授权认证、数据校验以及集群状态变更等
+> 
+> 提供其他模块之间的数据交互和通信枢纽
+
+k8s系统构件 - kubelet
+- 节点管理
+- Pod管理
+- 容器健康检查
+- cAdvisor 资源监控
+- kubelet Eviction 驱逐
+- 容器运行时
+
+k8s系统构件 - controller manager
+
+kubernetes的大脑
+
+通过 apiserver 监控整个集群的状态，并确保集群处于预期的工作状态
+
+k8s的资源控制器
+> Job/CronJob 一般用于批处理脚本的场景
+> 
+> StatefulSet 有状态的服务应用程序可用，用于有状态的服务，比如说数据库，不能随便迁移 也不能祟拜你重启
+> 
+> - 稳定的持球话存储 基于 PVC 实现
+> - 提供稳定的网络标志
+> - 有序部署、扩展和伸缩 即从 n-1 到 0
+> 
+> HorizontalPodAutoscaling 自动扩展，用于控制其他控制器自动扩展
+
+k8s的资源控制器 -- HPA
+
+HPA 是在k8s里的 HPA controller 实现的
+
+Pod 水平自动扩容 Horizontal Pod Autoscaler
+> 基于cpu利用率伸缩 replication controller 、 Deployment 和 replicaSet 中Pod的数量
+> 
+> 也可以基于其他应用程序提供的度量指标 custom metrics
+
+举个例子
+
+我们前面的HPA测试的yaml文件里设置的是CPU超过5%就扩容，容器的cpu上升了以后呢，宿主机里的 kubelet 里面的 cAdvisor 就会采集到这个信息，然后
+上报到普罗米修斯里面， HPA controller 就会去监听这个普罗米修斯里面我们设置监听的容器的负载的变化，cpu大于5之后就会增加deployment中我们的指定
+的replicas的数量，HPA修改了这个数量之后会提交到API server 里面，replicaSet controller 就会监听到API server 里面这个 replica 数量发生了变化
+controller就会做出响应 扩充新的容器
+
+k8s中的调度器 -- scheduler
+> 负责分配调度 Pod 到集群内的 Node 上，它监听API server，查询还未分配Node的Pod 然后根据调度策略为这些Pod分配Node
+
+调度顺序: [看图就好](https://www.modb.pro/db/174089)
+
+##### 6 小结
+
+- 什么是容器编排
+- 为什么是k8s
+        
+      
+    1. HPA
+    2. Node Pod container
+    3. Deployment & ReplicaSet
+    4. controller
+    5. Damon Set
+
+- k8s 架构
+  
+      1. API Server
+      2. Kubelet
+      3. Scheduler
+      4. controller manager
