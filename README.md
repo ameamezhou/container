@@ -512,7 +512,7 @@ spec:
 
 回滚: kubectl rollout undo deployment/nginx
 
-其中可以用 kubctl get deployment 可以看到所有deployment集群
+其中可以用 kubectl get deployment 可以看到所有deployment集群
 
 kubectl get pods 可以看到所有的pod 然后看到 deployment 集群的pods会自动带上一些字符串后缀进行区分
 

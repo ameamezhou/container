@@ -9,6 +9,7 @@ Master 组件是 Kubernetes 系统中的控制节点，负责管理整个 Kubern
 1. etcd：一个分布式键值对存储系统，用于存储整个 Kubernetes 集群的状态信息。
 2. kube-apiserver：Kubernetes API 服务器，提供与整个 Kubernetes 集群的交互。
 3. kube-controller-manager：负责管理 Kubernetes 中的控制器，例如 Node、Service、Replication Controller 等。
+4. kube-schedule: 调度器根据特定的调度算法和调度策略将 Pod 调度到合适的 Node节点上去 可以理解为为Pod选择最合适的Node。
 
 - Node
 
@@ -16,7 +17,7 @@ Node 是 Kubernetes 集群中的计算节点，负责运行 Docker 容器和负�
 
 1. kubelet：负责维护 Pod 的生命周期、容器和镜像的管理等。
 2. kube-proxy：实现 Kubernetes Service 中的网络代理和负载均衡。
-3. Container Runtime：负责在节点上运行 Docker 容器的容器引擎。
+3. Container Runtime：容器运行环境， 目前支持 Docker 和 rtx。
 
 - Addons
 
@@ -40,6 +41,14 @@ Volume 是 Kubernetes 中的一种资源类型，它允许将数据存储到独�
 Docker是轻量级的沙盒，相对于传统虚拟化来说的话没有虚拟、独立的操作系统，在其中运行的只是应用。
 
 然后k8s是一个容器编排的工具 + 有哪些组件
+
+服务发现及负载均衡这个k8s自带，Kubernetes为容器提供了自己的IP地址和一组容器的单个DNS名称，并可以在它们之间进行负载均衡。
+
+这里我补充下，有支持第三方开发operator的能力
+
+K8S还能根据自定义的策略，不需要停机来更新应用
+
+自动修复，能够保证应用的稳定性，通过检测和失败修复，重启不健康的容器等方法
 
 ### kube-proxy 的作用
 kube-proxy 是 Kubernetes 中的一个组件，主要负责实现 Kubernetes 集群中的服务发现和负载均衡。其主要功能包括：
@@ -111,5 +120,49 @@ spec:
 这些不同的 Pod 调度方式可以根据实际需求和场景来选择和组合，以实现最佳的资源利用率、性能和可靠性。
 
 ### deployment
+deployment 对象控制 replicaset 版本，而 replicaset 控制集群中 pod 的数量
 
+![img.png](img.png)
 
+deployment的配置
+
+![img_1.png](img_1.png)
+
+deployment 主要是通过label来识别pod的
+
+#### 常见操作
+创建服务: kubectl apply -f nginx.yaml
+
+删除服务: kubectl delete -f nginx.yaml
+
+扩容: kubectl scale deployment nginx--replicas 10
+
+升级: kubectl set image deployment/nginx nginx=nginx:1.9.4
+
+回滚: kubectl rollout undo deployment/nginx
+
+其中可以用 kubectl get deployment 可以看到所有deployment集群
+
+kubectl get pods 可以看到所有的pod 然后看到 deployment 集群的pods会自动带上一些字符串后缀进行区分
+
+#### 更新策略
+在 spec.strategy 中定义更新策略，两种方式:
+- Recreate: 所有 Pod 杀掉再更新
+- RollingUpdate: 滚动更新pod;spec.strategy.rolingUpdate.maxUnavailable用于指定更新过程中不可用状态的Pod数量的上限;spec.strategy.rolingUpdate.maxSurge用于指定更新过程中pod总数量超过期望数量的部分的最大值
+
+#### deployment 和 service的区别
+在 Kubernetes 中，Deployment 和 Service 是两个核心概念，分别用于管理应用程序的部署和实现服务发现与负载均衡。它们的主要区别如下：
+
+1. **Deployment（部署）**：
+    - **作用**：Deployment 用于定义应用程序的部署方式，确保应用程序的副本数量符合预期，并提供滚动更新和回滚功能。Deployment 控制 Pod 的创建和更新过程，确保应用程序持续处于所需的状态。
+    - **特点**：Deployment 通过定义 Pod 模板、副本数量、更新策略等参数来管理应用程序的部署，使得应用程序的部署和更新过程更加可控和稳定。
+
+2. **Service（服务）**：
+    - **作用**：Service 用于定义一组 Pod 的访问方式，为应用程序提供稳定的网络端点。Service 允许外部客户端或其他应用程序通过 Service 访问应用程序，同时实现负载均衡和服务发现。
+    - **特点**：Service 可以将一组具有相同标签的 Pod 组合成一个服务，并为这些 Pod 提供一个虚拟 IP 地址和稳定的 DNS 名称，以便其他应用程序可以通过该地址访问这些 Pod。
+
+总结：
+- Deployment 主要用于管理应用程序的部署和更新，确保应用程序的副本数量和状态符合预期。
+- Service 主要用于实现服务发现和负载均衡，为一组 Pod 提供一个稳定的网络端点，使得应用程序可以被其他应用程序或外部客户端访问。
+
+在实际应用中，通常会同时使用 Deployment 和 Service 来管理应用程序的部署和对外提供服务，以实现应用程序的高可用性、可伸缩性和稳定性。
