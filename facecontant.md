@@ -189,3 +189,72 @@ kubectl get pods 可以看到所有的pod 然后看到 deployment 集群的pods�
 5. **Service 返回给请求方**：Service 将后端 Pod 的响应返回给请求方，完成整个数据传输过程。
 
 在这个过程中，Kubernetes 中的 Service 扮演了负载均衡和服务发现的角色，确保请求能够被正确转发到后端的 Pod 上，实现了应用程序的高可用性和可伸缩性。通过 Service，Pod 可以被抽象为一个服务，而不需要外部客户端或其他应用程序直接与 Pod 进行通信，从而简化了应用程序的网络通信管理。
+
+### 初始化容器和SideCar容器的区别
+在pod前的准备工作中使用Init Containers
+
+k8s除了提供多容器外还提供了一种叫做初始化容器的功能，顾名思义它就是在pods 容器启动前工作的容器，一般场景中init containers这些容器在执行完后就不再运行了处于pause状态，这里特别要注意的是它的执行会严格按照编排的从上至下的顺序逐一初始化，这种顺序也是实现初始化工作不可缺少的。
+
+更多的初始化容器应用场景：
+   - 在运行app前跑数据库的迁移脚本
+   - 从外部读取/拉取一个超大文件时可以避免容器臃肿
+
+
+边车模式，我一直把他想想成老式三轮摩托车的副座，它始终与摩托车主题保持一致并提供各种辅助功能，实现方式也是添加容器来增强pod中应用，边车最经典的应用就是日志跟踪。
+
+在容器化的环境中最标准的做法是标准输出日志到一个中心化的收集器中用于分析和管理。但是很多老的应用是将日志写入文件，而更改日志输出有时候是一件困难的事。
+
+那么添加一个日志跟踪的边车就意味着你可能不必去更改日志代码
+
+其他边车模式常用的场景
+   - 实时的重启ConfigMaps而不需要重启pod
+   - 从Hashcorp Vault注入秘钥
+   - 添加一个本地的redis作为一个低延迟的内存缓存服务
+
+总结：
+1. init Container：提前做准备的
+2. sideCar：提供各种辅助功能
+
+### nginx ingress的原理本质
+
+Nginx-ingress 是 Kubernetes 生态中的重要成员，主要负责向外暴露服务，同时提供负载均衡等附加功能；
+
+Ingress 公开了从集群外部到集群内服务的 HTTP 和 HTTPS 路由。 流量路由由 Ingress 资源上定义的规则控制。
+
+![img_2.png](img_2.png)
+
+ingress 的好处
+
+1. 端口管理。减少不必要端口暴露，便于管理。 所有的请求，通过Ingress对应的IP:PORT进入，过滤/转发/负载均衡到相应的service/pod。
+2. NodePort会在每个node上暴露对应的port，不便管理。
+
+优点：
+
+   - Ingress支持L7负载均衡；
+   - Ingress基于Pod部署，并将Pod网络设置成external network；
+   - Ingress controller支持Nginx、Haproxy，能够满足企业内部使用。
+
+### Kubernetes(k8s)集群节点需要关机维护，需要怎么操作？
+将需要维护的节点设置为不可用，并重新调度其上运行的所有pod。
+```shell
+# 隔离节点
+kubectl cordon ek8s-node-1
+
+# 驱逐其上运行的pod
+kubectl drain ek8s-node-1 --ignore-daemonsets --delete-local-data --force
+```
+
+### Pod 创建过程
+1. 提交Pod请求：用户通过命令行或其他方式提交一个Pod请求给Kubernetes API Server。
+2. 请求参数验证：Kubernetes API Server验证提交的Pod请求参数是否合法。如果不合法，会拒绝请求并返回错误信息。
+3. 创建Pod Spec：如果请求参数合法，Kubernetes API Server会创建一个Pod Spec，其中包含Pod的元数据信息和容器的定义。
+4. 创建Pod：根据Pod Spec，Kubernetes Controller Manager会创建一个Pod。在此过程中，它会验证Pod Spec中的容器镜像是否存在，容器端口是否冲突等。
+5. 分配IP地址：Pod创建完成后，Kubernetes API Server会为Pod分配一个IP地址，并将这个信息存储在etcd中。
+6. 调度Pod：Kubernetes Scheduler会根据Pod的资源需求和节点资源状况，将Pod调度到一个合适的节点上。调度信息也会存储在etcd中。
+7. 创建容器：在Pod被调度到节点之后，Kubernetes Kubelet会根据Pod Spec中容器的定义，创建容器。
+
+整个过程涉及到多个组件的协作，包括API Server、Controller Manager、Scheduler和Kubelet等。它们通过etcd进行信息共享和协调工作
+
+### kube-proxy 原理
+
+
